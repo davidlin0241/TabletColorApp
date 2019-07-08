@@ -59,13 +59,31 @@
 			// you may also add code outside of the function (e.g., global variables)
 			function myGradientInteraction(){
 				var tool = new paper.Tool();
-
+        var rec = new paper.Path.Rectangle({
+          point : [210, 310],
+          size : [300, 100],
+          fillColor: 'red'
+        });
+        paper.project.insertLayer(1, rec);
+        var s = [];
+        var o;
+        var d;
 				tool.onMouseDown = function (event) {
-
+          s = new Array(cp.history[cp.history.length - 2], cp.history[cp.history.length - 1]);
+          o = event.point;
 				}
 
 				tool.onMouseUp = function (event) {
-					
+          d = event.point;
+          rec.style = {
+            fillColor : {
+              gradient : {
+                stops : s
+              },
+              origin : o,
+              destination : d
+            }
+          };
 				}
 			}
 
