@@ -18,15 +18,17 @@
 		#color-palette {
 			width: 300px;
 			background-color: #f1f1f1;
-      display : flex;
+      display : none;
 			flex-wrap: wrap;
 			position: absolute;
 			top: 0;
+      z-index: 1;
+      border: 2px solid LightGrey;
 		}
 
 		.swatch {
-			width: 24px;
-			height: 24px;
+			width: 50px;
+			height: 50px;
 			-moz-border-radius: 12px;
 			-webkit-border-radius: 12px;
 			border-radius: 12px;
@@ -108,9 +110,16 @@
 				tool = new paper.Tool();
         
 				tool.onMouseDown = function (event) {
+            var b = document.getElementById("color-button");
+            b.style.backgroundColor = cp.history[cp.history.length - 1];
 				    var hit = mandala.item.hitTest(event.point, { tolerance: 10, fill: true });
 				    if (hit) {
 				        hit.item.fillColor = cp.history[cp.history.length - 1];
+                var c = document.getElementById("color-palette");
+                if (c.style.display != "none") {
+                  c.style.display = "none";
+                  b.style.display = "";
+                }
                 //check if any slots on the bar are empty
                 var recentBar = document.getElementById("recent");
                 var children = recentBar.children;
@@ -190,6 +199,8 @@
                 var t = (comps[2] * 255).toString();
                 var string = "rgb(" + f + ", " + s + ", " + t + ")"
                 cp.history.push(string);
+                var b = document.getElementById("color-button");
+                b.style.backgroundColor = cp.history[cp.history.length - 1];
             }  
         }
 			}
@@ -237,6 +248,19 @@
 					
 				}); 
 			}
+      
+      window.onclick = function(event) {
+          var c = document.getElementById("color-palette");
+          var b = document.getElementById("color-button");
+          b.style.backgroundColor = cp.history[cp.history.length - 1];
+          if (event.target.tagName != 'BUTTON') {
+           if (c.style.display != "none") {
+              c.style.display = "none";
+              b.style.display = "";
+            }
+          }
+        }
+      
 
 			// To see your myGradientInteraction version visit: 
 			// http://<your url>:8000/coloring/?type=gradient
@@ -267,61 +291,78 @@
     }
     
     function openMenu() {
-      document.getElementById("color-palette").style.display = "show";
-      alert(document.getElementById("color-palette").style.display);
+      document.getElementById("color-palette").style.display = "flex";
+      document.getElementById("color-button").style.display = "none";
     }
     
-    function brushUnderline() {
-      $('.fa-paint-brush').removeClass('.fa-paint-brush');
-    }
+    
 	</script>
 </head>
 <body>
   
   <div class="container-fluid">
     <div class="row align-items-center" style="background-color:#f1f1f1">
-      <div class="col-4" style="height:60px">
+      <div class="col-4" style="height:60px;margin-left:100px;">
+         <button type="button" class="btn btn-lg" onclick="openMenu()" id="color-button" style="background-color:black;width:50px;height:50px;margin-top:5px;outline:"></button>
          <div id="color-palette"></div>
       </div>
+      
+     
       <div class="col">
-         <i class="fa fa-history" style="font-size:36px" onclick="hideRecent()"></i>
+         <i class="fa fa-history" style="font-size:36px;" onclick="hideRecent()"></i>
       </div>
-      <div class="col">
-        <span onclick="brushUnderline()">
-          <i class="fa fa-paint-brush" style="font-size:36px" onclick="tool.activate()"></i>
-        </span>
+      <div class="col" >
+          <i class="fa fa-paint-brush" style="font-size:36px;border-bottom:3px solid red;" onclick="tool.activate()"></i>
       </div>
-      <div class="col">
+      <div class="col" >
         <i class="fa fa-eraser" style="font-size:36px" onclick="eraser.activate()"></i>
       </div>
-      <div class="col">
+      <div class="col" >
         <i class="fa fa-eyedropper" style="font-size:36px" onclick="eyedropper.activate()"></i>
       </div>
+      
     </div>
     
      <div class="row" style="background-color:#f1f1f1;" id="recent">
-       <div class="col-3 recent" onclick="change(0)">
-         
-       </div>
-       <div class="col-3 recent" onclick="change(1)">
-         
-       </div>
+       <div class="col-3 recent" onclick="change(0)"></div>
+       <div class="col-3 recent" onclick="change(1)"> </div>
+       <div class="col-3 recent" onclick="change(2)"> </div>
+       <div class="col-3 recent" onclick="change(3)"> </div>
        
-       <div class="col-3 recent" onclick="change(2)">
-         
-       </div>
-       <div class="col-3 recent" onclick="change(3)">
-         
-       </div>
     </div>
     
     <canvas id="myCanvas" width="750px" height="750px"></canvas>
   </div>
   
-  <script>
-    $('.fa-paint-brush').click(function() {
-      $("i", this).toggleClass("icon-circle-arrow-up icon-circle-arrow-down");
-    });
+  <script type="text/javascript">
+      
+      $(document).ready(() => {
+     
+        const $brush = $('.fa-paint-brush');
+        const $eraser = $('.fa-eraser');
+        const $eyedropper = $(".fa-eyedropper");
+        
+        $brush.click(function() {
+          $brush.css({"border-bottom": "3px solid red"});
+          $eraser.css({"border-bottom-style": "none"});
+          $eyedropper.css({"border-bottom-style": "none"});
+        })
+        
+        
+        $eraser.click(function() {
+          $eraser.css({"border-bottom": "3px solid red"});
+          $brush.css({"border-bottom-style": "none"});
+          $eyedropper.css({"border-bottom-style": "none"});
+        })
+   
+        
+        $eyedropper.click(function() {
+         $eyedropper.css({"border-bottom": "3px solid red"});
+         $eraser.css({"border-bottom-style": "none"});
+         $brush.css({"border-bottom-style": "none"});
+        })
+        
+      })
     
   </script>
 
