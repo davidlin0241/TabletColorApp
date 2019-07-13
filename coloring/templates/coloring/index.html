@@ -3,17 +3,22 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   	<title>P3 Coloring</title>
 
 	<script type="text/javascript" src="{% static 'coloring/vendors/jquery/jquery-3.3.1.min.js' %}"></script>
 	<script type="text/javascript" src="{% static 'coloring/vendors/paper/paper-full.min.js' %}"></script>
+  
+  
 
 	<style type="text/css">
 		#color-palette {
 			width: 300px;
 			background-color: #f1f1f1;
-			display: flex;
+      display : flex;
 			flex-wrap: wrap;
 			position: absolute;
 			top: 0;
@@ -30,14 +35,22 @@
 
 		#myCanvas {
 			padding-left: 0;
-		    padding-right: 0;
-		    margin-left: auto;
-		    margin-right: auto;
-		    display: block;
+      padding-right: 0;
+      margin-left: auto;
+      margin-right: auto;
+      display: block;
+      margin-top: 75px;
 		}
+    
+    .recent {
+      height: 40px;
+      border: 2px solid LightGrey;
+    }
+   
 	</style>
 
 	<script type="text/javascript" canvas="canvas">
+    var tool, eraser, eyedropper;
 		window.onload = function() {
 			var canvas = document.getElementById('myCanvas');
 
@@ -49,11 +62,13 @@
 			};	
 
 			// color palette
-			var cp = {
-				history: ["#000000"], // black selected by default
+			cp = {
+				history: ["rgb(0, 0, 0)"], // black selected by default
 				options: [],
 				$container: $('#color-palette')
-			}
+			}     
+      LRUArray = [-1, -1, -1, -1];
+      recentColors = [-1, -1, -1, -1]; 
 
 			// your rectangle gradient interaction goes in this function
 			// you may also add code outside of the function (e.g., global variables)
@@ -90,17 +105,95 @@
 			// your custom interaction goes here!
 			// you may replace everything
 			function myCustomInteraction() {
-				var tool = new paper.Tool();
-
+				tool = new paper.Tool();
+        
 				tool.onMouseDown = function (event) {
 				    var hit = mandala.item.hitTest(event.point, { tolerance: 10, fill: true });
 				    if (hit) {
 				        hit.item.fillColor = cp.history[cp.history.length - 1];
+                //check if any slots on the bar are empty
+                var recentBar = document.getElementById("recent");
+                var children = recentBar.children;
+                if (recentColors.includes(cp.history[cp.history.length - 1])) { //on bar, slots full or not
+                  // increment all LRU counters that are not -1 or hit.item.fillColor
+                  //set hit.item.fillCollor LRU to 0
+                  var i = 0;
+                  for (i; i < LRUArray.length; i+=1) {
+                    if (recentColors[i] != cp.history[cp.history.length - 1]) { //at this point, there should be no empty slot
+                      if (LRUArray[i] != -1) {
+                        LRUArray[i] += 1;
+                       }
+                    } else {
+                      LRUArray[i] = 0; 
+                    }
+                  }
+                  
+                } else if (LRUArray.includes(-1)) {
+                  //not on bar, not all slots full
+                  //place in left-most empty space
+                  var i = 0;
+                  for (i; i < LRUArray.length; i += 1) {
+                    if (LRUArray[i] == -1) {
+                      break;
+                    }
+                  }
+                  var j = 0;
+                  for (j; j < LRUArray.length; j+=1)
+                      if (LRUArray[j] != -1) {
+                        LRUArray[j] += 1;
+                  }
+                      
+                  LRUArray[i] = 0;
+                  recentColors[i] = cp.history[cp.history.length - 1]; 
+                  var leftmost = children[i];
+                  leftmost.style.background = cp.history[cp.history.length - 1];
+                } else {
+                  //not on bar, slots full
+                  // replace least recently used of the four and set its counter to 0
+                  var i = 0;
+                  var m = -2;
+                  var index = 0;
+                  for (i; i < LRUArray.length;i += 1) {
+                    if (m < LRUArray[i]) {
+                      index = i;
+                      m = LRUArray[i];
+                    }
+                  }
+                  var toReplace = children[index];
+                  recentColors[index] = cp.history[cp.history.length - 1]; 
+                  toReplace.style.background = cp.history[cp.history.length - 1];
+                  
+                  var j = 0;
+                  for (j; j < LRUArray.length; j+=1)
+                      if (LRUArray[j] != -1) {
+                        LRUArray[j] += 1;
+                  }
+                  LRUArray[index] = 0;
+                } 
 				    }
 				}
+        eraser = new paper.Tool();
+        eraser.onMouseDown = function(event) {
+          var hit = mandala.item.hitTest(event.point, { tolerance: 10, fill: true });
+				    if (hit) {
+				        hit.item.fillColor = "#ffffff";
+            }
+        }
+        
+        eyedropper = new paper.Tool();
+        eyedropper.onMouseDown = function(event) {
+          var hit = mandala.item.hitTest(event.point, { tolerance: 10, fill: true });
+				    if (hit) {
+				        comps = hit.item.fillColor._components;
+                var f = (comps[0] * 255).toString();
+                var s = (comps[1] * 255).toString();
+                var t = (comps[2] * 255).toString();
+                var string = "rgb(" + f + ", " + s + ", " + t + ")"
+                cp.history.push(string);
+            }  
+        }
 			}
-
-
+                    
 			// create a color palette with the given colors
 			function createColorPalette(colors){
 
@@ -156,11 +249,83 @@
 				init(true);
 			}
 		}
+    
+    function hideRecent() {
+      var r = document.getElementById("recent");
+      if (r.style.display != "none") {
+        r.style.display = "none";
+      } else {
+        r.style.display = "";
+      }
+      
+    }
+  
+    
+    function change(i) {
+      var r = document.getElementById("recent");
+      cp.history.push(r.children[i].style.background);
+    }
+    
+    function openMenu() {
+      document.getElementById("color-palette").style.display = "show";
+      alert(document.getElementById("color-palette").style.display);
+    }
+    
+    function brushUnderline() {
+      $('.fa-paint-brush').removeClass('.fa-paint-brush');
+    }
 	</script>
 </head>
-<body>	
+<body>
+  
+  <div class="container-fluid">
+    <div class="row align-items-center" style="background-color:#f1f1f1">
+      <div class="col-4" style="height:60px">
+         <div id="color-palette"></div>
+      </div>
+      <div class="col">
+         <i class="fa fa-history" style="font-size:36px" onclick="hideRecent()"></i>
+      </div>
+      <div class="col">
+        <span onclick="brushUnderline()">
+          <i class="fa fa-paint-brush" style="font-size:36px" onclick="tool.activate()"></i>
+        </span>
+      </div>
+      <div class="col">
+        <i class="fa fa-eraser" style="font-size:36px" onclick="eraser.activate()"></i>
+      </div>
+      <div class="col">
+        <i class="fa fa-eyedropper" style="font-size:36px" onclick="eyedropper.activate()"></i>
+      </div>
+    </div>
+    
+     <div class="row" style="background-color:#f1f1f1;" id="recent">
+       <div class="col-3 recent" onclick="change(0)">
+         
+       </div>
+       <div class="col-3 recent" onclick="change(1)">
+         
+       </div>
+       
+       <div class="col-3 recent" onclick="change(2)">
+         
+       </div>
+       <div class="col-3 recent" onclick="change(3)">
+         
+       </div>
+    </div>
+    
+    <canvas id="myCanvas" width="750px" height="750px"></canvas>
+  </div>
+  
+  <script>
+    $('.fa-paint-brush').click(function() {
+      $("i", this).toggleClass("icon-circle-arrow-up icon-circle-arrow-down");
+    });
+    
+  </script>
 
-	<canvas id="myCanvas" width="750px" height="750px"></canvas>
-	<div id="color-palette"></div>
+	
+	
 </body>
 </html>
